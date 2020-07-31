@@ -65,10 +65,11 @@ ${GCC} src/mlib.c $CCFLAGS -I src -c -o build/mlib.o
 ${GCC} src/render.c $CCFLAGS -I src -c -o build/render.o
 ${GCC} src/fmath.c $CCFLAGS -I src -c -o build/fmath.o
 ${GCC} src/fintro.c $CCFLAGS -I src -c -o build/fintro.o
+${GCC} src/amigaos3-zz9k.c $CCFLAGS -I src -c -o build/amigaos3-zz9k.o
 ${GCC} src/assets.c $CCFLAGS -I src -c -o build/assets.o
 # Following could be used to compile ASM functions
 # ${VASM} -m68040 -Fhunk src/render68k.asm -o build/render68k.o
 
 # Link with -noixemul for smaller exe size, this disables the UNIX emulation layer, this can be buggy and we don't need
 # it anyway.
-${GCC} -lm -noixemul $CCFLAGS build/main.o build/mlib.o build/fmath.o build/fintro.o build/render.o build/assets.o build/audio.o ${POST_LDFLAGS} -o build/fintro-gcc
+${GCC} -lm -noixemul $CCFLAGS build/main.o build/mlib.o build/fmath.o build/fintro.o build/render.o build/assets.o build/audio.o build/amigaos3-zz9k.o ${POST_LDFLAGS} -o build/fintro-gcc
