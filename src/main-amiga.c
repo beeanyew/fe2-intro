@@ -13,6 +13,7 @@
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/timer.h>
+#include "amigaos3-zz9k.h"
 
 #ifdef __GNUC__
 #include <inline/cybergraphics.h>
@@ -130,6 +131,9 @@ static struct AudioTimerCallbackInfo sAudioTimer;
 size_t __stack = (1 ^ 16);
 #endif
 
+u32 zz9k_base_addr = 0;
+u8 zz9k_available = 0;
+
 u64 AOS_GetClockCount(void) {
     struct EClockVal clock;
     ReadEClock(&clock);
@@ -188,6 +192,10 @@ void AOS_init(void) {
 
     OpenDevice((CONST_STRPTR)"timer.device", 0, &TimerDevice, 0);
     TimerBase = TimerDevice.io_Device;
+
+    zz9k_base_addr = find_zz9k();
+    if (zz9k_base_addr != 0)
+        zz9k_available = 1;
 }
 
 void AOS_screen_init(void) {
@@ -832,13 +840,18 @@ __stdargs int main(int argc, char** argv) {
                     AOS_cleanupAndExit(0);
                 }
 
-                u8* bufferLineDest = buffer;
-                u8* bufferLineSrc = surface.pixels;
-                for (int i = 0; i < SURFACE_HEIGHT; i++) {
-                    memcpy(bufferLineDest, bufferLineSrc, SURFACE_WIDTH);
+                if (zz9k_available) {
+                    zz9k_blit_rect((u32)surface.pixels, (u32)buffer, 0, 0, surface.width, bytesPerRow, surface.width, surface.height, 1, 1, 0);
+                }
+                else {
+                    u8* bufferLineDest = buffer;
+                    u8* bufferLineSrc = surface.pixels;
+                    for (int i = 0; i < SURFACE_HEIGHT; i++) {
+                        memcpy(bufferLineDest, bufferLineSrc, SURFACE_WIDTH);
 
-                    bufferLineSrc += SURFACE_WIDTH;
-                    bufferLineDest += bytesPerRow;
+                        bufferLineSrc += SURFACE_WIDTH;
+                        bufferLineDest += bytesPerRow;
+                    }
                 }
 
                 UnLockBitMap(handle);

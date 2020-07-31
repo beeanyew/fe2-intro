@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include "amigaos3-zz9k.h"
 
 #if FINTRO_SCREEN_RES == 1
 #define SCREEN_SCALE 1
@@ -81,6 +82,11 @@
 #define FRAME_MEM_USE_MALLOC 1
 // uncomment the following to use alloc instead
 //#define FRAME_MEM_USE_STACK_ALLOC 1
+#endif
+
+#ifdef AMIGA
+extern unsigned char zz9k_available;
+extern u32 zz9k_base_addr;
 #endif
 
 // Custom stack based mem allocator, so we don't pollute/consume process/thread stack
@@ -274,6 +280,11 @@ void Surface_Init(Surface* surface, u16 width, u16 height) {
     Surface_Free(surface);
     surface->width = width;
     surface->height = height;
+#ifdef AMIGA
+    if (zz9k_available)
+        surface->pixels = (u8*)zz9k_alloc_mem(width * height);
+    else
+#endif
     surface->pixels = (u8*)MMalloc(sizeof(u8) * width * height);
 #ifdef FINSPECTOR
     surface->insOffset = (u32*)MMalloc(sizeof(u32) * width * height);
@@ -281,11 +292,21 @@ void Surface_Init(Surface* surface, u16 width, u16 height) {
 }
 
 void Surface_Free(Surface* surface) {
+#ifdef AMIGA
+    if (zz9k_available)
+        zz9k_free_surface((u32)surface->pixels);
+    else
+#endif
     MFree(surface->pixels); surface->pixels = 0;
 #ifdef FINSPECTOR
     MFree(surface->insOffset); surface->insOffset = 0;
 #endif
 }
+
+#ifdef AMIGA
+#define CHKZZ9(a) \
+    (zz9k_available && (u32)a > zz9k_base_addr)
+#endif
 
 void Surface_Clear(Surface* surface, u8 colour) {
 #ifdef FINSPECTOR
@@ -297,6 +318,10 @@ void Surface_Clear(Surface* surface, u8 colour) {
     }
 #else
     // Clear 4 bytes at a time
+    if CHKZZ9(surface->pixels) {
+        zz9k_clearbuf((u32)surface->pixels, colour, surface->width, surface->height, 1);
+        return;
+    }
     u32* pixels32 = (u32*)surface->pixels;
     u32 colour32 = colour;
     u32* end = pixels32 + ((SURFACE_HEIGHT * SURFACE_WIDTH) / 4);
@@ -311,6 +336,11 @@ void Surface_Clear(Surface* surface, u8 colour) {
 // - writing words is better than bytes?
 static void DrawSpanNoClip(u8* restrict pixelsLine, i16 x1, i16 x2, u8 colour) {
 #ifdef AMIGA
+    if (zz9k_available) {
+        if (x1 < x2)
+            zz9k_clearbuf((u32)pixelsLine+x1, colour, x2-x1, 1, 1);
+        return;
+    }
 #if defined(__GNUC__)
     u8* restrict dummy1;
     i16 dummy2;
@@ -379,6 +409,15 @@ MINTERNAL void DrawPixel(Surface* surface, int x, int y, u8 colour) {
 }
 
 void Surface_DrawRect(Surface* surface, int x1, int y1, int x2, int y2, u8 colour) {
+#ifdef AMIGA
+    if CHKZZ9(surface->pixels) {
+        zz9k_drawline((u32)surface->pixels, surface->width, x1, y1, x2, y1, colour, 1, 1, 1);
+        zz9k_drawline((u32)surface->pixels, surface->width, x1, y2, x2, y2, colour, 1, 1, 1);
+        zz9k_drawline((u32)surface->pixels, surface->width, x1, y1, x1, y2, colour, 1, 1, 1);
+        zz9k_drawline((u32)surface->pixels, surface->width, x2, y1, x2, y2, colour, 1, 1, 1);
+        return;
+    }
+#endif
     if (x1 < 0) {
         x1 = 0;
     }
@@ -448,6 +487,12 @@ void Surface_DrawRectFill(Surface* surface, int x1, int y1, int x2, int y2, u8 c
         return;
     }
 
+#ifdef AMIGA
+    if CHKZZ9(surface->pixels) {
+        zz9k_fill_rect((u32)surface->pixels, surface->width, x1, y1, w, h, colour, 1);
+        return;
+    }
+#endif
     for (int i = 0; i < h; i++) {
         int d = ((i + y1) * surface->width) + x1;
         for (int j = 0; j < w; j++) {
@@ -460,6 +505,12 @@ void Surface_DrawRectFill(Surface* surface, int x1, int y1, int x2, int y2, u8 c
 }
 
 void DrawCircleOutline(Surface* surface, int x, int y, int r, u8 colour) {
+#ifdef AMIGA
+    if CHKZZ9(surface->pixels) {
+        zz9k_draw_circle((u32)surface->pixels, surface->width, x, y, surface->width, surface->height, r, colour, 1);
+        return;
+    }
+#endif
     int x1 = r;
     int y1 = 0;
     int d = 3 - 2 * r;
@@ -1564,6 +1615,12 @@ void Surface_DrawLine(Surface* surface, int x1, int y1, int x2, int y2, u8 colou
         MSWAP(x1, x2, int);
     }
 
+#ifdef AMIGA
+    if (zz9k_available) {
+        zz9k_drawline((u32)surface->pixels, surface->width, x1, y1, x2, y2, colour, 1, 1, 1);
+        return;
+    }
+#endif
     int xLen = x2 - x1;
     int yLen = y2 - y1;
 
