@@ -584,6 +584,13 @@ void Surface_DrawCircleFill(Surface* surface, int x, int y, int diameter, u8 col
         return;
     }
 
+#ifdef AMIGA
+    if (zz9k_available) {
+        zz9k_fill_circle((u32)surface->pixels, surface->width, x, y, surface->width, surface->height, diameter / 2, colour, 1);
+        return; 
+    }
+#endif
+
     if (diameter < 6) {
         DrawSmallCircle(surface, x, y, diameter, colour);
         return;
@@ -615,6 +622,13 @@ void Surface_DrawCircleFill(Surface* surface, int x, int y, int diameter, u8 col
 }
 
 void Surface_DrawTriFill(Surface* surface, Vec2i16 points[3], u8 colour) {
+#ifdef AMIGA
+    if (zz9k_available) {
+        zz9k_draw_flat_tri((u32)surface->pixels, surface->width, surface->width, surface->height, points, colour, 1);
+        return;
+    }
+#endif
+
     while ((points[0].y > points[1].y) ||
            (points[0].y > points[2].y)) {
 
@@ -709,6 +723,14 @@ void Surface_DrawTriFill(Surface* surface, Vec2i16 points[3], u8 colour) {
 }
 
 void Surface_DrawQuadFill(Surface* surface, Vec2i16 points[4], u8 colour) {
+#ifdef AMIGA
+    if (zz9k_available) {
+        zz9k_draw_flat_tri((u32)surface->pixels, surface->width, surface->width, surface->height, points, colour, 1);
+        points[1] = points[3];
+        zz9k_draw_flat_tri((u32)surface->pixels, surface->width, surface->width, surface->height, points, colour, 1);
+        return;
+    }
+#endif
     while ((points[0].y > points[1].y) ||
            (points[0].y > points[2].y) ||
            (points[0].y > points[3].y)) {

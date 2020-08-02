@@ -58,6 +58,8 @@ void zz9k_set_16_to_8_colormap(void *src);
 void zz9k_drawline(unsigned int dest, int dest_pitch, int x, int y, int x2, int y2, unsigned int color, unsigned char bpp, int pen_width, int pen_height);
 void zz9k_fill_rect(unsigned int dest, int dest_pitch, int x, int y, int w, int h, unsigned int color, unsigned char bpp);
 void zz9k_draw_circle(unsigned int dest, int dest_pitch, int x, int y, int w, int h, int r, unsigned int color, unsigned char bpp);
+void zz9k_fill_circle(unsigned int dest, int dest_pitch, int x, int y, int w, int h, int r, unsigned int color, unsigned char bpp);
+void zz9k_draw_flat_tri(unsigned int dest, int dest_pitch, int w, int h, void *pts_, unsigned int color, unsigned char bpp);
 
 unsigned int zz9k_alloc_surface(unsigned short w, unsigned short h, unsigned char bpp);
 unsigned int zz9k_alloc_mem(unsigned int size);
@@ -96,6 +98,9 @@ enum gfx_acc_op {
   ACC_OP_DRAW_LINE,
   ACC_OP_FILL_RECT,
   ACC_OP_DRAW_CIRCLE,
+  ACC_OP_FILL_CIRCLE,
+  ACC_OP_DRAW_FLAT_TRI,
+  ACC_OP_DRAW_TEX_TRI,
   ACC_OP_NUM,
 };
 

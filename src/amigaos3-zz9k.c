@@ -167,6 +167,42 @@ void zz9k_draw_circle(unsigned int dest, int dest_pitch, int x, int y, int w, in
     ZZWRITE16(REG_ZZ_ACC_OP, ACC_OP_DRAW_CIRCLE);
 }
 
+void zz9k_fill_circle(unsigned int dest, int dest_pitch, int x, int y, int w, int h, int r, unsigned int color, unsigned char bpp) {
+    gxd->offset[0] = (dest & 0x0FFFFFFF);
+    gxd->pitch[0] = (unsigned short)dest_pitch;
+    gxd->x[0] = (unsigned short)x; gxd->y[0] = (unsigned short)y;
+    gxd->x[1] = (unsigned short)w; gxd->y[1] = (unsigned short)h;
+    gxd->x[2] = (unsigned short)r;
+    gxd->rgb[0] = color;
+    gxd->u8_user[0] = bpp;
+
+    ZZWRITE16(REG_ZZ_ACC_OP, ACC_OP_FILL_CIRCLE);
+}
+
+typedef struct {
+    short x;
+    short y;
+} vec2;
+
+void zz9k_draw_flat_tri(unsigned int dest, int dest_pitch, int w, int h, void *pts_, unsigned int color, unsigned char bpp) {
+    int pts_idx = 0;
+    vec2 *pts = (vec2 *)pts_;
+    unsigned int *pts_ptr = (unsigned int *)gxd->clut4;
+
+    gxd->offset[0] = (dest & 0x0FFFFFFF);
+    gxd->pitch[0] = (unsigned short)dest_pitch;
+    gxd->x[0] = (unsigned short)w; gxd->y[0] = (unsigned short)h;
+    gxd->rgb[0] = color;
+    gxd->u8_user[0] = bpp;
+
+    for (int i = 0; i < 3; i++) {
+        pts_ptr[pts_idx++] = pts[i].x;
+        pts_ptr[pts_idx++] = pts[i].y;
+    }
+
+    ZZWRITE16(REG_ZZ_ACC_OP, ACC_OP_DRAW_FLAT_TRI);
+}
+
 unsigned int zz9k_alloc_surface(unsigned short w, unsigned short h, unsigned char bpp) {
     gxd->x[0] = w;
     gxd->y[0] = h;
